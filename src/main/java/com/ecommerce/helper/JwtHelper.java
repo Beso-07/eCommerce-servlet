@@ -30,4 +30,28 @@ public final class JwtHelper {
     public static Claims validateAndParse(String token) {
         return Jwts.parser().verifyWith(KEY).build().parseSignedClaims(token).getPayload();
     }
+
+    public static boolean validateToken(String token) {
+        try {
+            validateAndParse(token);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public static Long getUserIdFromToken(String token) {
+        Claims claims = validateAndParse(token);
+        return Long.parseLong(claims.getSubject());
+    }
+
+    public static String getRoleFromToken(String token) {
+        Claims claims = validateAndParse(token);
+        return claims.get("role", String.class);
+    }
+
+    public static long getTokenExpiration(String token) {
+        Claims claims = validateAndParse(token);
+        return claims.getExpiration().getTime();
+    }
 }

@@ -2,10 +2,14 @@ package com.ecommerce.service;
 
 import com.ecommerce.dao.ProductDAO;
 import com.ecommerce.dao.impl.ProductDAOImpl;
+import com.ecommerce.helper.RedisHelper;
 import com.ecommerce.model.Product;
+import com.ecommerce.util.JsonUtil;
 import com.ecommerce.util.ValidationUtil;
+import com.google.gson.reflect.TypeToken;
 
 import java.math.BigDecimal;
+import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,14 +18,24 @@ public class ProductService {
     private final ProductDAO productDAO = new ProductDAOImpl();
 
     public List<Product> getAllProducts() {
-        // String cached = RedisHelper.get(PRODUCTS_CACHE_KEY);
-        // if (cached != null) {
-        //     Type listType = new TypeToken<List<Product>>() {}.getType();
-        //     return new com.google.gson.Gson().fromJson(cached, listType);
-        // }
-        // List<Product> products = productDAO.findAll();
-        // RedisHelper.setex(PRODUCTS_CACHE_KEY, 120, JsonUtil.toJson(products));
-        return productDAO.findAll();
+        try {
+            String cached = RedisHelper.get(PRODUCTS_CACHE_KEY);
+            if (cached != null) {
+                Type listType = new TypeToken<List<Product>>() {}.getType();
+                return new com.google.gson.Gson().fromJson(cached, listType);
+            }
+        } catch (Exception e) {
+            // Redis unavailable, continue with database query
+            System.err.println("Redis cache unavailable: " + e.getMessage());
+        }
+        List<Product> products = productDAO.findAll();
+        try {
+            RedisHelper.setex(PRODUCTS_CACHE_KEY, 300, JsonUtil.toJson(products));
+        } catch (Exception e) {
+            // Redis unavailable, continue without caching
+            System.err.println("Redis cache set failed: " + e.getMessage());
+        }
+        return products;
     }
 
     public Optional<Product> getById(long id) {
@@ -41,7 +55,12 @@ public class ProductService {
         product.setPrice(price);
         product.setImageUrl(imageUrl.trim());
         Product created = productDAO.create(product);
-        // RedisHelper.del(PRODUCTS_CACHE_KEY);
+        try {
+            RedisHelper.del(PRODUCTS_CACHE_KEY);
+        } catch (Exception e) {
+            // Redis unavailable, continue without cache invalidation
+            System.err.println("Redis cache invalidation failed: " + e.getMessage());
+        }
         return created;
     }
 
@@ -59,11 +78,21 @@ public class ProductService {
         product.setPrice(price);
         product.setImageUrl(imageUrl.trim());
         productDAO.update(product);
-        // RedisHelper.del(PRODUCTS_CACHE_KEY);
+        try {
+            RedisHelper.del(PRODUCTS_CACHE_KEY);
+        } catch (Exception e) {
+            // Redis unavailable, continue without cache invalidation
+            System.err.println("Redis cache invalidation failed: " + e.getMessage());
+        }
     }
 
     public void deleteProduct(long id) {
         productDAO.deleteById(id);
-        // RedisHelper.del(PRODUCTS_CACHE_KEY);
+        try {
+            RedisHelper.del(PRODUCTS_CACHE_KEY);
+        } catch (Exception e) {
+            // Redis unavailable, continue without cache invalidation
+            System.err.println("Redis cache invalidation failed: " + e.getMessage());
+        }
     }
 }

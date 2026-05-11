@@ -6,7 +6,7 @@ import redis.clients.jedis.JedisPoolConfig;
 
 public final class RedisHelper {
     private static final String HOST = System.getenv().getOrDefault("ECOMMERCE_REDIS_HOST", "localhost");
-    private static final int PORT = Integer.parseInt(System.getenv().getOrDefault("ECOMMERCE_REDIS_PORT", "6379"));
+    private static final int PORT = Integer.parseInt(System.getenv().getOrDefault("ECOMMERCE_REDIS_PORT", "6380"));
     private static final JedisPool POOL = new JedisPool(new JedisPoolConfig(), HOST, PORT);
 
     private RedisHelper() {
@@ -38,5 +38,9 @@ public final class RedisHelper {
             }
             return count <= limit;
         }
+    }
+
+    public static JedisPool getPool() {
+        return POOL;
     }
 }
