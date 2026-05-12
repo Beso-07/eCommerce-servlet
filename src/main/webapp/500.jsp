@@ -6,7 +6,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
-<jsp:include page="/partials/navbar.jsp"/>
+<jsp:include page="/navbar.jsp"/>
 <main class="container py-5">
     <div class="alert alert-danger shadow-sm">
         <h1 class="h4 mb-2">500 - Internal Server Error</h1>

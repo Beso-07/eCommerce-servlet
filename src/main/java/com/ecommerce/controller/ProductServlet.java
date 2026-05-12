@@ -1,6 +1,7 @@
 package com.ecommerce.controller;
 
 import com.ecommerce.model.Product;
+import com.ecommerce.model.Review;
 import com.ecommerce.service.ProductService;
 import com.ecommerce.service.ReviewService;
 import jakarta.servlet.ServletException;
@@ -11,6 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 @WebServlet(urlPatterns = {"/", "/products", "/products/details", "/products/add", "/products/edit", "/products/delete"})
@@ -35,8 +37,9 @@ public class ProductServlet extends HttpServlet {
             return;
         }
 
-        List<Product> products = productService.getAllProducts();
-        req.setAttribute("products", products);
+        Map<Product, List<Review>> productsWithReviews = productService.getProductsWithReviews();
+        req.setAttribute("productsWithReviews", productsWithReviews);
+        
         req.getRequestDispatcher("/index.jsp").forward(req, resp);
     }
 

@@ -29,4 +29,22 @@ public class ReviewService {
         review.setComment(comment.trim());
         return reviewDAO.save(review);
     }
+
+    public List<Review> getRecentReviews(int limit) {
+        if (limit <= 0) {
+            throw new IllegalArgumentException("Limit must be positive");
+        }
+        return reviewDAO.findRecentReviews(limit);
+    }
+
+    public void deleteReview(long reviewId, long userId) {
+        ValidationUtil.validateId(reviewId, "Review id");
+        ValidationUtil.validateId(userId, "User id");
+        reviewDAO.deleteById(reviewId, userId);
+    }
+
+    public Review getReviewById(long reviewId) {
+        ValidationUtil.validateId(reviewId, "Review id");
+        return reviewDAO.findById(reviewId);
+    }
 }

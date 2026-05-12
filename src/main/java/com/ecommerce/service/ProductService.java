@@ -4,18 +4,20 @@ import com.ecommerce.dao.ProductDAO;
 import com.ecommerce.dao.impl.ProductDAOImpl;
 import com.ecommerce.helper.RedisHelper;
 import com.ecommerce.model.Product;
+import com.ecommerce.model.Review;
 import com.ecommerce.util.JsonUtil;
 import com.ecommerce.util.ValidationUtil;
 import com.google.gson.reflect.TypeToken;
 
 import java.math.BigDecimal;
 import java.lang.reflect.Type;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class ProductService {
     private static final String PRODUCTS_CACHE_KEY = "products:all";
     private final ProductDAO productDAO = new ProductDAOImpl();
+    private final ReviewService reviewService = new ReviewService();
 
     public List<Product> getAllProducts() {
         try {
@@ -25,14 +27,12 @@ public class ProductService {
                 return new com.google.gson.Gson().fromJson(cached, listType);
             }
         } catch (Exception e) {
-            // Redis unavailable, continue with database query
             System.err.println("Redis cache unavailable: " + e.getMessage());
         }
         List<Product> products = productDAO.findAll();
         try {
             RedisHelper.setex(PRODUCTS_CACHE_KEY, 300, JsonUtil.toJson(products));
         } catch (Exception e) {
-            // Redis unavailable, continue without caching
             System.err.println("Redis cache set failed: " + e.getMessage());
         }
         return products;
@@ -58,7 +58,6 @@ public class ProductService {
         try {
             RedisHelper.del(PRODUCTS_CACHE_KEY);
         } catch (Exception e) {
-            // Redis unavailable, continue without cache invalidation
             System.err.println("Redis cache invalidation failed: " + e.getMessage());
         }
         return created;
@@ -81,7 +80,6 @@ public class ProductService {
         try {
             RedisHelper.del(PRODUCTS_CACHE_KEY);
         } catch (Exception e) {
-            // Redis unavailable, continue without cache invalidation
             System.err.println("Redis cache invalidation failed: " + e.getMessage());
         }
     }
@@ -91,8 +89,19 @@ public class ProductService {
         try {
             RedisHelper.del(PRODUCTS_CACHE_KEY);
         } catch (Exception e) {
-            // Redis unavailable, continue without cache invalidation
             System.err.println("Redis cache invalidation failed: " + e.getMessage());
         }
+    }
+
+    public Map<Product, List<Review>> getProductsWithReviews() {
+        List<Product> products = getAllProducts();
+        Map<Product, List<Review>> productsWithReviews = new LinkedHashMap<>();
+        
+        for (Product product : products) {
+            List<Review> reviews = reviewService.getByProduct(product.getId());
+            productsWithReviews.put(product, reviews);
+        }
+        
+        return productsWithReviews;
     }
 }

@@ -17,6 +17,7 @@
 <head>
     <title>Product Details</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
         .star-input { display: inline-flex; flex-direction: row-reverse; gap: .25rem; }
         .star-input input { display: none; }
@@ -27,7 +28,7 @@
     </style>
 </head>
 <body class="bg-light">
-<jsp:include page="/partials/navbar.jsp"/>
+<jsp:include page="/navbar.jsp"/>
 <main class="container py-4">
     <% if (product != null) { %>
     <div class="card shadow-sm mb-4">
@@ -54,10 +55,21 @@
         <% } else { for (Review review : reviews) { %>
         <div class="card mb-2">
             <div class="card-body">
-                <strong><%= review.getReviewerName() %></strong>
-                <span class="text-warning"><%= "★".repeat(review.getRating()) %></span>
-                <span class="text-muted">(<%= review.getRating() %>/5)</span>
-                <p class="mb-0"><%= review.getComment() %></p>
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <strong><%= review.getReviewerName() %></strong>
+                        <span class="text-warning"><%= "★".repeat(review.getRating()) %></span>
+                        <span class="text-muted">(<%= review.getRating() %>/5)</span>
+                        <p class="mb-0"><%= review.getComment() %></p>
+                    </div>
+                    <% if (currentUser != null && currentUser.getId() == review.getUserId()) { %>
+                    <a href="${pageContext.request.contextPath}/reviews/delete?reviewId=<%= review.getId() %>" 
+                       class="btn btn-sm btn-outline-danger" 
+                       onclick="return confirm('Are you sure you want to delete this review?')">
+                        <i class="bi bi-trash"></i> Delete
+                    </a>
+                    <% } %>
+                </div>
             </div>
         </div>
         <% }} %>

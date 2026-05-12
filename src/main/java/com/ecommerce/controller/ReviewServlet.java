@@ -11,10 +11,19 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.logging.Logger;
 
-@WebServlet(urlPatterns = "/reviews/add")
+@WebServlet(urlPatterns = {"/reviews/add", "/reviews/delete"})
 public class ReviewServlet extends HttpServlet {
     private static final Logger LOGGER = Logger.getLogger(ReviewServlet.class.getName());
     private final ReviewService reviewService = new ReviewService();
+
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        String path = req.getServletPath();
+        if ("/reviews/delete".equals(path)) {
+            handleDeleteReview(req, resp);
+            return;
+        }
+    }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -41,6 +50,34 @@ public class ReviewServlet extends HttpServlet {
             req.getSession().setAttribute("reviewError", ex.getMessage());
             String fallbackId = req.getParameter("productId");
             resp.sendRedirect(req.getContextPath() + "/products/details?id=" + fallbackId);
+        }
+    }
+
+    private void handleDeleteReview(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        User user = (User) req.getSession().getAttribute("user");
+        if (user == null) {
+            resp.sendRedirect(req.getContextPath() + "/login.jsp");
+            return;
+        }
+
+        try {
+            long reviewId = Long.parseLong(req.getParameter("reviewId"));
+            reviewService.deleteReview(reviewId, user.getId());
+            LOGGER.info("Review deleted by user " + user.getId() + ": " + reviewId);
+            
+            String referer = req.getHeader("Referer");
+            if (referer != null && !referer.isEmpty()) {
+                resp.sendRedirect(referer);
+            } else {
+                resp.sendRedirect(req.getContextPath() + "/");
+            }
+        } catch (NumberFormatException ex) {
+            LOGGER.warning("Invalid review ID: " + ex.getMessage());
+            resp.sendRedirect(req.getContextPath() + "/");
+        } catch (RuntimeException ex) {
+            LOGGER.warning("Review deletion failed: " + ex.getMessage());
+            req.getSession().setAttribute("reviewError", ex.getMessage());
+            resp.sendRedirect(req.getContextPath() + "/");
         }
     }
 }

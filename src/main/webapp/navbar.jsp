@@ -20,7 +20,7 @@
 
                 <% if (navUser == null) { %>
                     <li class="nav-item mx-2"><a class="nav-link" href="${pageContext.request.contextPath}/login.jsp">Login</a></li>
-                    <li class="nav-item mx-2"><a class="nav-link btn btn-outline-light btn-sm px-3" href="${pageContext.request.contextPath}/register.jsp">Register</a></li>
+                    <li class="nav-item mx-2"><a class="nav-link" href="${pageContext.request.contextPath}/register.jsp">Register</a></li>
                 <% } else { %>
                     
                     <% if (isAdmin) { %>

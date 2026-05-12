@@ -13,7 +13,7 @@ import java.util.Map;
 
 @WebFilter(urlPatterns = "/*")
 public class RateLimitFilter implements Filter {
-    private static final int MAX_REQUESTS = 10;
+    private static final int MAX_REQUESTS = 30;
     private static final int WINDOW_SECONDS = 60;
 
     @Override
@@ -24,41 +24,28 @@ public class RateLimitFilter implements Filter {
             String clientIp = getClientIp(req);
             String key = "ratelimit:" + clientIp;
             
-            // Use direct Redis operations for proper INCR/EXPIRE logic
             try (Jedis jedis = RedisHelper.getPool().getResource()) {
                 long currentCount = jedis.incr(key);
                 
-                // Set expiration on first request in the window
                 if (currentCount == 1) {
                     jedis.expire(key, WINDOW_SECONDS);
                 }
                 
-                // Check if rate limit exceeded
                 if (currentCount > MAX_REQUESTS) {
                     JsonUtil.writeJson(resp, 429, Map.of(
                         "message", "Too Many Requests",
                         "retryAfter", WINDOW_SECONDS,
-                        "limit", MAX_REQUESTS,
-                        "window", WINDOW_SECONDS
+                        "limit", MAX_REQUESTS
                     ));
                     return;
                 }
-                
-                // Add rate limit headers for client visibility
-                resp.setHeader("X-RateLimit-Limit", String.valueOf(MAX_REQUESTS));
-                resp.setHeader("X-RateLimit-Remaining", String.valueOf(Math.max(0, MAX_REQUESTS - currentCount)));
-                resp.setHeader("X-RateLimit-Reset", String.valueOf(System.currentTimeMillis() + (WINDOW_SECONDS * 1000)));
             }
         } catch (Exception e) {
-            // Redis unavailable, continue without rate limiting
             System.err.println("Rate limiting unavailable: " + e.getMessage());
         }
         chain.doFilter(request, response);
     }
     
-    /**
-     * Get client IP address considering X-Forwarded-For header for proxy scenarios
-     */
     private String getClientIp(HttpServletRequest request) {
         String xForwardedFor = request.getHeader("X-Forwarded-For");
         if (xForwardedFor != null && !xForwardedFor.isEmpty() && !"unknown".equalsIgnoreCase(xForwardedFor)) {
