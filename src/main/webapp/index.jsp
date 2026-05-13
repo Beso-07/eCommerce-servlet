@@ -65,11 +65,16 @@
                                             <p class="small text-muted mb-1"><%= review.getComment() %></p>
                                         </div>
                                         <% if (currentUser != null && currentUser.getId() == review.getUserId()) { %>
-                                        <a href="${pageContext.request.contextPath}/reviews/delete?reviewId=<%= review.getId() %>" 
-                                           class="btn btn-sm btn-outline-danger" 
-                                           onclick="return confirm('Are you sure you want to delete this review?')">
-                                            <i class="bi bi-trash"></i>
-                                        </a>
+                                        <form method="post"
+                                              action="${pageContext.request.contextPath}/reviews/delete"
+                                              class="m-0"
+                                              onclick="event.stopPropagation();"
+                                              onsubmit="return confirm('Are you sure you want to delete this review?')">
+                                            <input type="hidden" name="reviewId" value="<%= review.getId() %>">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
                                         <% } %>
                                     </div>
                                 </div>

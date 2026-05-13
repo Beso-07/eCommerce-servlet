@@ -15,7 +15,7 @@ public class ReviewService {
         return reviewDAO.findByProductId(productId);
     }
 
-    public Review addReview(long productId, long userId, String reviewerName, int rating, String comment) {
+    public void addReview(long productId, long userId, String reviewerName, int rating, String comment) {
         ValidationUtil.validateId(productId, "Product id");
         ValidationUtil.validateId(userId, "User id");
         ValidationUtil.requireNotBlank(reviewerName, "Reviewer name");
@@ -27,7 +27,7 @@ public class ReviewService {
         review.setReviewerName(reviewerName.trim());
         review.setRating(rating);
         review.setComment(comment.trim());
-        return reviewDAO.save(review);
+        reviewDAO.save(review);
     }
 
     public List<Review> getRecentReviews(int limit) {

@@ -3,7 +3,6 @@ package com.ecommerce.filter;
 import com.ecommerce.helper.RedisHelper;
 import com.ecommerce.util.JsonUtil;
 import jakarta.servlet.*;
-import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import redis.clients.jedis.Jedis;
@@ -11,7 +10,6 @@ import redis.clients.jedis.Jedis;
 import java.io.IOException;
 import java.util.Map;
 
-@WebFilter(urlPatterns = "/*")
 public class RateLimitFilter implements Filter {
     private static final int MAX_REQUESTS = 30;
     private static final int WINDOW_SECONDS = 60;

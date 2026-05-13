@@ -47,7 +47,7 @@ public class ProductDAOImpl implements ProductDAO {
     public Product create(Product product) {
         String sql = "INSERT INTO products(name, description, price, image_url) VALUES(?, ?, ?, ?)";
         try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             statement.setString(1, product.getName());
             statement.setString(2, product.getDescription());
             statement.setBigDecimal(3, product.getPrice());

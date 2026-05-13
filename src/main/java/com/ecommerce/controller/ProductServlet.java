@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 @WebServlet(urlPatterns = {"/", "/products", "/products/details", "/products/add", "/products/edit", "/products/delete"})
@@ -25,21 +26,24 @@ public class ProductServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String path = req.getServletPath();
         if ("/products/details".equals(path)) {
-            long productId = Long.parseLong(req.getParameter("id"));
-            var product = productService.getById(productId);
+            Optional<Long> id = parseId(req.getParameter("id"));
+            if (id.isEmpty()) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid product id");
+                return;
+            }
+            var product = productService.getById(id.get());
             if (product.isEmpty()) {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
             }
             req.setAttribute("product", product.get());
-            req.setAttribute("reviews", reviewService.getByProduct(productId));
+            req.setAttribute("reviews", reviewService.getByProduct(id.get()));
             req.getRequestDispatcher("/product-details.jsp").forward(req, resp);
             return;
         }
 
         Map<Product, List<Review>> productsWithReviews = productService.getProductsWithReviews();
         req.setAttribute("productsWithReviews", productsWithReviews);
-        
         req.getRequestDispatcher("/index.jsp").forward(req, resp);
     }
 
@@ -58,23 +62,42 @@ public class ProductServlet extends HttpServlet {
             return;
         }
         if ("/products/edit".equals(path)) {
-            long id = Long.parseLong(req.getParameter("id"));
+            Optional<Long> id = parseId(req.getParameter("id"));
+            if (id.isEmpty()) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid product id");
+                return;
+            }
             productService.updateProduct(
-                    id,
+                    id.get(),
                     req.getParameter("name"),
                     req.getParameter("description"),
                     req.getParameter("price"),
                     req.getParameter("imageUrl")
             );
-            LOGGER.info("Product updated with id " + id);
+            LOGGER.info("Product updated with id " + id.get());
             resp.sendRedirect(req.getContextPath() + "/admin");
             return;
         }
         if ("/products/delete".equals(path)) {
-            long id = Long.parseLong(req.getParameter("id"));
-            productService.deleteProduct(id);
-            LOGGER.info("Product deleted with id " + id);
+            Optional<Long> id = parseId(req.getParameter("id"));
+            if (id.isEmpty()) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid product id");
+                return;
+            }
+            productService.deleteProduct(id.get());
+            LOGGER.info("Product deleted with id " + id.get());
             resp.sendRedirect(req.getContextPath() + "/admin");
+        }
+    }
+
+    private static Optional<Long> parseId(String raw) {
+        if (raw == null || raw.isBlank()) return Optional.empty();
+        try {
+            long id = Long.parseLong(raw.trim());
+            if (id <= 0) return Optional.empty();
+            return Optional.of(id);
+        } catch (NumberFormatException ex) {
+            return Optional.empty();
         }
     }
 }

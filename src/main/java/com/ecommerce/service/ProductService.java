@@ -12,7 +12,6 @@ import com.google.gson.reflect.TypeToken;
 import java.math.BigDecimal;
 import java.lang.reflect.Type;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class ProductService {
     private static final String PRODUCTS_CACHE_KEY = "products:all";
@@ -48,7 +47,6 @@ public class ProductService {
         ValidationUtil.validateImageUrl(imageUrl);
         BigDecimal price = new BigDecimal(priceRaw);
         ValidationUtil.validatePrice(price);
-
         Product product = new Product();
         product.setName(name.trim());
         product.setDescription(description.trim());
@@ -96,12 +94,12 @@ public class ProductService {
     public Map<Product, List<Review>> getProductsWithReviews() {
         List<Product> products = getAllProducts();
         Map<Product, List<Review>> productsWithReviews = new LinkedHashMap<>();
-        
+
         for (Product product : products) {
             List<Review> reviews = reviewService.getByProduct(product.getId());
             productsWithReviews.put(product, reviews);
         }
-        
+
         return productsWithReviews;
     }
 }

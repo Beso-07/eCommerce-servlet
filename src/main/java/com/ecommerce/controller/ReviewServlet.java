@@ -17,16 +17,13 @@ public class ReviewServlet extends HttpServlet {
     private final ReviewService reviewService = new ReviewService();
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String path = req.getServletPath();
         if ("/reviews/delete".equals(path)) {
             handleDeleteReview(req, resp);
             return;
         }
-    }
 
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         User user = (User) req.getSession().getAttribute("user");
         if (user == null) {
             resp.sendRedirect(req.getContextPath() + "/login.jsp");
@@ -60,23 +57,28 @@ public class ReviewServlet extends HttpServlet {
             return;
         }
 
+        long reviewId;
         try {
-            long reviewId = Long.parseLong(req.getParameter("reviewId"));
+            reviewId = Long.parseLong(req.getParameter("reviewId"));
+        } catch (NumberFormatException ex) {
+            LOGGER.warning("Invalid review ID: " + ex.getMessage());
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid review id");
+            return;
+        }
+
+        try {
             reviewService.deleteReview(reviewId, user.getId());
             LOGGER.info("Review deleted by user " + user.getId() + ": " + reviewId);
-            
+
             String referer = req.getHeader("Referer");
             if (referer != null && !referer.isEmpty()) {
                 resp.sendRedirect(referer);
             } else {
                 resp.sendRedirect(req.getContextPath() + "/");
             }
-        } catch (NumberFormatException ex) {
-            LOGGER.warning("Invalid review ID: " + ex.getMessage());
-            resp.sendRedirect(req.getContextPath() + "/");
         } catch (RuntimeException ex) {
             LOGGER.warning("Review deletion failed: " + ex.getMessage());
-            req.getSession().setAttribute("reviewError", ex.getMessage());
+            req.getSession().setAttribute("reviewError", "Could not delete review");
             resp.sendRedirect(req.getContextPath() + "/");
         }
     }
